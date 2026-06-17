@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Кастомізація списку ігор · WGC Research</title>
+<style>
+  :root{
+    --bg:#0e1116; --bg-soft:#151a22; --panel:#1a212b; --border:#283140;
+    --text:#e7ecf3; --muted:#9aa7b8; --accent:#f5a623; --accent-2:#4aa3ff;
+    --good:#43c59e; --code:#ffd479; --shadow:0 8px 30px rgba(0,0,0,.35);
+    --maxw:980px; --radius:14px;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f4f6fa; --bg-soft:#ffffff; --panel:#ffffff; --border:#e2e7ef;
+      --text:#1b2330; --muted:#5d6b7e; --accent:#d98a00; --accent-2:#1f6fdb;
+      --good:#1f9b78; --code:#9a5b00; --shadow:0 8px 28px rgba(20,30,50,.08);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    font-size:17.5px; line-height:1.7; -webkit-font-smoothing:antialiased;
+  }
+  .topbar{
+    position:sticky; top:0; z-index:10; backdrop-filter:blur(10px);
+    background:color-mix(in srgb,var(--bg) 82%, transparent);
+    border-bottom:1px solid var(--border);
+  }
+  .topbar-inner{max-width:var(--maxw); margin:0 auto; padding:14px 28px; display:flex; align-items:center; gap:14px}
+  .badge{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--bg);
+    background:var(--accent); padding:5px 11px; border-radius:999px; font-weight:700}
+  .topbar h1{font-size:16px; margin:0; font-weight:600; color:var(--text)}
+  .topbar .sub{color:var(--muted); font-size:13px; margin-left:auto}
+  .topbar .sub a{color:var(--muted)}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:38px 28px 100px}
+  .doc{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:44px 52px;
+  }
+  h1,h2,h3,h4{line-height:1.25; font-weight:700; scroll-margin-top:80px}
+  .doc>h1:first-child{margin-top:0}
+  h1{font-size:2em; margin:1.4em 0 .5em; padding-bottom:.3em; border-bottom:2px solid var(--border)}
+  h2{font-size:1.5em; margin:1.7em 0 .5em; color:var(--text)}
+  h2::before{content:""; display:inline-block; width:8px; height:8px; border-radius:2px;
+    background:var(--accent); margin-right:11px; vertical-align:middle}
+  h3{font-size:1.18em; margin:1.4em 0 .4em; color:var(--accent-2)}
+  h4{font-size:1.02em; margin:1.2em 0 .3em; color:var(--muted); text-transform:uppercase; letter-spacing:.05em}
+  p{margin:.7em 0}
+  a{color:var(--accent-2); text-decoration:none; border-bottom:1px solid transparent}
+  a:hover{border-bottom-color:var(--accent-2)}
+  strong{color:var(--text); font-weight:700}
+  code{background:var(--bg-soft); color:var(--code); padding:2px 7px; border-radius:6px;
+    font-family:"SF Mono",Menlo,Consolas,monospace; font-size:.88em; border:1px solid var(--border)}
+  hr{border:none; border-top:1px solid var(--border); margin:2.2em 0}
+  blockquote{margin:1.1em 0; padding:.7em 1.2em; background:var(--bg-soft);
+    border-left:4px solid var(--accent); border-radius:0 10px 10px 0; color:var(--muted)}
+  blockquote p{margin:.3em 0}
+  ul,ol{margin:.7em 0; padding-left:1.5em}
+  li{margin:.32em 0}
+  ul{list-style:none; padding-left:.2em}
+  ul li{padding-left:1.6em; position:relative}
+  ul li::before{content:"▸"; color:var(--accent); position:absolute; left:.3em; top:0}
+  ol{padding-left:1.7em}
+  ol li::marker{color:var(--accent); font-weight:700}
+  table{border-collapse:collapse; width:100%; margin:1.2em 0; font-size:.92em;
+    border:1px solid var(--border); border-radius:10px; overflow:hidden}
+  th,td{padding:10px 13px; text-align:left; border-bottom:1px solid var(--border); vertical-align:top}
+  th{background:var(--bg-soft); color:var(--text); font-weight:700; font-size:.84em;
+    text-transform:uppercase; letter-spacing:.04em}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:color-mix(in srgb,var(--accent) 7%, transparent)}
+  td:first-child{color:var(--text); font-weight:600}
+  /* --- галерея скріншотів --- */
+  .gallery{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; margin:1.5em 0}
+  .gallery figure{margin:0; background:var(--bg-soft); border:1px solid var(--border);
+    border-radius:11px; overflow:hidden; cursor:zoom-in; transition:transform .15s ease, border-color .15s ease, box-shadow .15s ease}
+  .gallery figure:hover{transform:translateY(-3px); border-color:var(--accent); box-shadow:var(--shadow)}
+  .gallery img{display:block; width:100%; height:155px; object-fit:cover; background:#05070a}
+  .gallery figcaption{padding:9px 12px; font-size:.8em; color:var(--muted); line-height:1.45}
+  /* --- лайтбокс --- */
+  .lightbox{position:fixed; inset:0; background:rgba(0,0,0,.9); display:none;
+    align-items:center; justify-content:center; z-index:100; padding:32px; cursor:zoom-out}
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:95%; max-height:90%; border-radius:8px; box-shadow:0 12px 60px rgba(0,0,0,.6)}
+  .lightbox .cap{position:absolute; bottom:20px; left:0; right:0; text-align:center;
+    color:#cdd6e2; font-size:14px; padding:0 20px}
+  .lightbox .x{position:absolute; top:18px; right:24px; color:#cdd6e2; font-size:30px; line-height:1; cursor:pointer}
+  .footer{max-width:var(--maxw); margin:0 auto; padding:0 28px; color:var(--muted); font-size:13px; text-align:center}
+  ::selection{background:var(--accent); color:#0e1116}
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <span class="badge">Research</span>
+      <h1>WGC · Кастомізація списку ігор</h1>
+      <span class="sub"><a href="readme.md">readme.md</a> · <a href="../research/research.html">← research</a></span>
+    </div>
+  </div>
+  <div class="wrap">
+    <article class="doc" id="content"><p style="color:var(--muted)">Завантаження…</p></article>
+  </div>
+  <div class="footer">Згенеровано з <code>readme.md</code> · клік по скріншоту — збільшити</div>
+
+  <div class="lightbox" id="lightbox"><span class="x">&times;</span><img alt=""><div class="cap"></div></div>
+
+<!-- Вміст синхронізований з readme.md. Після редагування readme.md онови цей блок. -->
+<script id="source" type="text/markdown">
+# Ресьорч: кастомізація списку ігор / фаворитів
+
+> Дослідження патернів **кастомізації списків** (favorites / pinned / collections) у різних застосунках — гейм-лаунчери, ОС, браузери, продуктивність і медіа. Мета: знайти найкращі моделі взаємодії для **кастомізованого «Favorites bar»** у редизайні WGC. Дата: 2026-06-17.
+
+Покрито **28 застосунків** у трьох доменах. Нижче — порівняльні таблиці, висновки по кожному домену, зведені рекомендації для WGC і галерея з 20 скріншотів.
+
+---
+
+## 0. Відправна точка — Battle.net (референс)
+
+Те, з чого почали. У Battle.net є горизонтальний бар **FAVORITES** з іконками ігор:
+
+- **Додати** — кнопка `+` у кінці бару → дропдаун `ADD A FAVORITE` зі списком усіх ігор + пункт `Manage All Favorites`.
+- **Переставити / видалити** — **right-click по іконці** → контекстне меню: `Move Right`, `Move Left`, `Remove from Favorites`.
+- **Підказка** — на hover спливає tooltip із повною назвою гри (іконки самі по собі неоднозначні).
+- **Режим редагування** — клік на `+` перемикає бар у стан із `×` (вийти з режиму).
+
+**Сильні сторони:** простий, явні дії в right-click, є tooltip для іконок. **Слабкі сторони:** переставляння через `Move Left/Right` по одному кроку — повільно проти drag&drop; немає груп; іконки без підписів важко розрізняти (критично для 35+).
+
+---
+
+## 1. Гейм-лаунчери
+
+| Лаунчер | Додати | Переставити | Сховати/видалити | Групи | Де живе |
+|---|---|---|---|---|---|
+| **Steam** | right-click → Add to favorites / ⭐; collections | collections — drag; **ігри всередині — лише сорт, без drag** ❗ | hide → Hidden collection | manual **+ dynamic (smart rules)** | лівий рейл + home shelves |
+| **GOG Galaxy 2.0** | tag «Favorites» + bookmark | **повний drag&drop** ✅ | hide (native 2.0.3) | tags + saved-view shelves (dynamic) | лівий рейл (saved views) |
+| **EA app** | ❤️ heart icon | ❌ немає | ❌ тільки через тікет | ❌ | лівий рейл «My Collection» |
+| **Ubisoft Connect** | ❌ немає favorites | ❌ | right-click → hide (внизу, погана видимість) | ❌ | таб «Games» |
+| **Xbox PC app** | `+` → додати будь-який .exe | ❓ не підтверджено | hide по сторфронту | manual groups | бічна панель «My Library» |
+| **Epic** | ⋯ → Add to Collection | ❌ немає | ❌ тільки глобальний toggle | manual only | таб Library |
+| **Riot / Rockstar** | ❌ немає | ❌ | ❌ | ❌ | фіксований список |
+
+### Ключові висновки по лаунчерах
+
+1. **Переставляння (reorder) — спільне слабке місце всієї індустрії.** Ручний drag-to-arrange ігор майже ніде не працює добре. **Steam дозволяє drag для колекцій, але не для ігор всередині них.** GOG — єдиний з нормальним drag&drop ігор. Це найочевидніша точка диференціації для WGC.
+2. **Дві домінантні моделі «додати»:** (а) right-click → «Add to…» (універсально, найкраща discoverability для 35+); (б) явний афорданс — ⭐/❤️/`+`.
+3. **Smart / dynamic groups** є лише у Steam (rules: жанр, play state, installed…) і GOG (saved filter views). Решта — або manual, або нічого.
+4. **Hide ≠ remove.** Найкраще зроблено у Steam (→ Hidden collection) і Ubisoft (хоч і захована внизу). Epic/EA не дають ховати окремі ігри взагалі.
+5. **Конвенція розташування:** кастом-список майже завжди живе в **лівому вертикальному рейлі**, у центрі — сітка обкладинок. WGC-бар натомість **горизонтальний угорі** (як Battle.net) — свідомо інша, «launcher-hub» конвенція.
+
+**Анти-патерн Steam:** toggle `Group by Collection` ховає власну кастомізацію користувача й заплутує. Не повторювати.
+
+![Steam · редактор dynamic collection (rules)](launcher_steam_dynamic-collection.jpg)
+![Steam · «Your Collections»](launcher_steam_collections.jpg)
+![Steam · створення колекції](launcher_steam_create-collection.jpg)
+![Epic · фільтри бібліотеки](launcher_epic_library-filter.jpg)
+![GOG Galaxy 2.0 · головна, saved-view shelves у рейлі](launcher_gog_main.png)
+![Uplay / Ubisoft · список ігор (legacy)](launcher_uplay_gamelist.png)
+![Xbox PC app · агрегована бібліотека](launcher_xbox_aggregated-library.jpg)
+
+---
+
+## 2. ОС та браузери
+
+| Платформа | Додати | Переставити | Видалити | Групи / папки |
+|---|---|---|---|---|
+| **macOS Dock** | drag in / right-click → Keep in Dock | **drag (завжди live, без режиму)** | drag off до «Remove» (погано!) / right-click | тільки Stacks для файлів |
+| **Windows 11 Taskbar** | right-click → Pin | drag | right-click → Unpin | ❌ плоский ряд |
+| **Windows 11 Start** | right-click → Pin to Start | drag **+ «Move to top»** (меню!) | Unpin | **drag-onto-icon → папка + rename** |
+| **Chrome bookmarks bar** | ⭐ icon / drag | drag | right-click → Delete | folders (right-click → Add folder) |
+| **Edge favorites bar** | ⭐ icon | drag | right-click → Delete | folders; 3-стан видимості бару |
+| **Pinned tabs** | right-click → Pin | drag | Unpin | implicit (зона pinned) |
+| **Speed dial** (Opera/Vivaldi) | `+` tile | drag | hover → ×/3-dot | drag-onto (Opera) / tabbed groups (Vivaldi) |
+| **iOS Home** | drag з App Library | **jiggle mode** + drag | `−` badge: Remove ≠ Delete | drag-onto → folder |
+| **Android Home** | long-press → drag | long-press + drag | drag до labeled «Remove»/«Uninstall» | drag-onto → folder |
+
+### Ключові висновки по ОС/браузерах
+
+1. **Reorder = drag, всюди.** Але drag-афорданс часто *невидимий* (Win taskbar, bookmark bars). iOS/Android/Opera роблять його явним.
+2. **Режим редагування vs без-режиму:** iOS використовує явний **jiggle/edit mode** → менше випадкових перестановок. macOS/Android — drag завжди live через long-press. Для 35+ десктоп-аудиторії явний, підписаний режим редагування безпечніший.
+3. **«Move to top» у Win11 Start** — меню-альтернатива довгому drag. Важлива для доступності (як `Move Left/Right` у Battle.net, але краще — одразу в початок).
+4. **Дворівневе видалення — домінантний безпечний патерн:** iOS (Remove from Home ≠ Delete) і Android (Remove ≠ Uninstall) розділяють «прибрати з поверхні» і «видалити повністю». **Android з підписаними drop-таргетами — найзрозуміліший** destructive-афорданс. macOS «drag off until Remove» — **найгірший** (невидимий, випадковий).
+5. **Папки створюють двома способами:** drag-onto-icon (iOS/Android/Win11/Opera) — інтуїтивно, але «виявляється» лише жестом; або явний «New folder» (bookmark bars) — discoverable. Для зростаючого портфоліо WG робити групування з видимим афордансом, не лише жестом.
+6. **Auto-overflow тримає поверхню чистою:** App Library / «Other bookmarks» / chevron `»`. Фаворити лишаються сфокусованими, а повне портфоліо — на крок глибше.
+7. **Favicon-only занадто неоднозначний для 35+.** Pinned tabs / щільні бари втрачають підписи. Підписані плитки ігор краще за icon-only.
+
+![Windows 11 Start · drag-onto → створення папки](os_win11_start-drag-folder.jpg)
+![Windows 11 Start · перейменування папки](os_win11_start-folder-rename.jpg)
+![Windows 11 Start · кілька іменованих папок](os_win11_start-folders.jpg)
+
+---
+
+## 3. Продуктивність / комунікація / медіа
+
+| Застосунок | Додати/pin | Переставити | Видалити | Групи | Афорданс |
+|---|---|---|---|---|---|
+| **Slack** | ⭐ star → авто-секція; custom sections | **drag + явний Sort** (A-Z/recency) | unstar | **named + emoji секції**, collapsible | star, 3-dot, drag, chevron |
+| **Discord** | drag server-onto-server | drag (+ keyboard a11y drag) | drag out (folder авто-зникає) | folders, **колір + назва** | drag (схований!), right-click |
+| **Notion** | ⭐ star → Favorites | drag (live) | star off / ⋯ | секції + nesting | star, drag, hover ⋯ |
+| **Spotify** | swipe→📌 / right-click; **макс 4 pin** | pins угорі; Custom order (desktop) | повторити pin | filter chips + folders | pin badge, chips, sort |
+| **Netflix** | `+` → ✓ toggle | ❌ **алгоритм, не юзер** ❗ | ✓ off | ❌ плоский | +/✓ |
+| **YouTube** | Subscribe | ❌ **алгоритм** ❗ | Unsubscribe | ❌ | toggle |
+| **Figma** | ⭐ (hover) / right-click | drag | un-star | Teams→Projects (fixed) | star (тільки hover ❗) |
+| **MS Office QAT** | right-click → Add to QAT | **Move Up/Down кнопки** ✅ | Remove | manual 3-рівні | модальний 2-pane редактор |
+| **Photoshop toolbar** | Edit Toolbar dialog, drag | drag | drag out (non-destructive) | drag-onto → nest | модальний dialog |
+| **iOS Control Center** | `+` → Gallery | drag | `−` badge | pages | **WYSIWYG + resize плитки** |
+| **Chrome extensions** | 🧩 → pushpin (blue/gray) | drag | unpin → overflow | ❌ (pinned vs overflow) | pushpin toggle |
+
+### Ключові висновки по застосунках
+
+1. **Алгоритмічний порядок (Netflix, YouTube) — застереження для 35+.** Список, що сам тихо перевпорядковується, **руйнує просторову пам'ять** і прибирає контроль. WGC-бар має бути строго ручним.
+2. **Найкращий афорданс «додати»: один видимий toggle.** Chrome pushpin (blue/gray) і Netflix `+/✓` — найзрозуміліші. Універсальний ⭐ (Slack/Notion/Figma) — теж сильний. Уникати hover-only / тільки-context-menu (Figma, Apple Music) — погана discoverability.
+3. **Найкращий reorder: drag + явний fallback.** Drag — очікування 8/11 застосунків, але важкий для слабкої моторики. Slack Sort, Office Up/Down, Discord keyboard-drag — accessible-альтернативи. Давати обидва.
+4. **Найкраще групування: іменовані, підписані emoji, collapsible секції Slack** — золотий стандарт читабельного manual-групування.
+5. **Discord: агрегований badge непрочитаного на згорнутій папці** — найкращий at-a-glance status. Ідеально для **сповіщень про новини/івенти на згорнутій групі ігор** у WGC.
+6. **Spotify «макс 4 pin»** — розумне обмеження: priority-зона коротка й однозначна.
+7. **iOS Control Center — найкраще WYSIWYG-редагування** (in-place + resize = більші таргети для старшого зору). Але обов'язково з видимою кнопкою «Customize», не лише long-press.
+8. **Reversibility safety net:** Chrome overflow і Photoshop «Extra Tools» гарантують, що нічого не губиться — unpin ховає, а не видаляє. Критично для впевненості 35+.
+
+![Slack · кастом-секції сайдбару](app_slack_sidebar-sections.jpg)
+![Slack · drag каналу в секцію](app_slack_drag-channel.png)
+![Discord · drag server-onto-server → папка](app_discord_drag-server-folder.jpg)
+![Discord · папка з кольором/назвою](app_discord_folder-colored.jpg)
+![Notion · додавання у Favorites (⭐)](app_notion_favorites.jpg)
+![Spotify · pinned playlists](app_spotify_pinned-playlists.jpg)
+![Netflix · «My List» (+/✓)](app_netflix_mylist.jpg)
+![MS Office QAT · кнопки Move Up/Down](app_office_move-up-down.png)
+![MS Office · діалог Quick Access Toolbar](app_office_qat-dialog.png)
+![iOS Control Center · resize плитки в edit-mode](app_ios_control-center-resize.png)
+![Chrome · pin/unpin розширень (pushpin)](app_chrome_pin-extensions.png)
+
+---
+
+## 4. Зведені висновки → рекомендації для WGC Favorites bar
+
+Синтез усіх трьох доменів. Рекомендований «blend» для бару фаворитів WGC:
+
+1. **Видима іконка pin/⭐ на кожній плитці гри** (Chrome/Slack), ніколи не hover-only — і **ніколи стан лише кольором** (WCAG AA вимагає не покладатися на колір).
+2. **Обмежена, завжди-вгорі зона «Favorites»** (дисципліна Spotify «4 pin») — для передбачуваності та чистоти.
+3. **Drag-to-reorder + явний fallback** («Move to start» як у Win11, або Up/Down як в Office) — для моторної доступності 35+. Battle.net `Move Left/Right` працює, але по одному кроку — повільно; додати «в початок/кінець».
+4. **Явний, підписаний режим редагування («Customize»)** — уникати схованих жестів Discord/Spotify/Control Center як єдиного шляху. iOS jiggle-mode як орієнтир, але з видимою кнопкою.
+5. **Дворівневе видалення:** «прибрати з бару» ≠ «сховати гру». Підписані дії (як Android Remove/Uninstall), reversible (overflow «All games»).
+6. **Іменовані, collapsible групи** (Slack) для тих, хто хоче структуру — опційно, не примусово. Масштабованість для всього портфоліо WG.
+7. **Агрегований badge новин/івентів на згорнутій групі** (Discord) — закриває engagement-мету WGC без розгортання.
+8. **Підписані плитки, не icon-only** — Battle.net показує назву лише на hover; для 35+ краще постійний підпис або хоча б більший контраст/таргет.
+9. **Overflow «All games» / App-Library модель** — бар лишається сфокусованим на фаворитах, повне портфоліо на крок глибше.
+10. **Smart shelves з адекватними дефолтами** (сила GOG/Steam dynamic), але **без примусу tag/bookmark mental model**, що робить GOG складним для не-power-users.
+
+### Топ-3 точки диференціації для WGC
+
+1. **Нормальний drag&drop reorder ігор** — те, що провалює майже вся індустрія (навіть Steam).
+2. **Контент-badge (новини/івенти) прямо в барі фаворитів** — поєднує time-to-play з engagement-метою брифу.
+3. **Доступність 35+ за замовчуванням:** підписи, великі таргети, явний режим редагування, меню-fallback до drag.
+
+---
+
+## 5. Джерела (вибірково)
+
+**Лаунчери:** Steam Library Update, TheGamer (dynamic collections), Epic Help (collections), PCWorld (GOG Galaxy 2.0), Ubisoft Help 000061584 (hide games), Windows Central / Xbox Wire (Xbox aggregated library).
+
+**ОС/браузери:** Apple Support (Dock, iOS), Microsoft Support (Taskbar, Start, pin apps), XDA (Win11 Start folders), Google Chrome Help (bookmarks), Mozilla (pinned tabs), Vivaldi/Opera Help (speed dial).
+
+**Застосунки:** Slack Help (sections, star), Discord Support (Server Folders 101), Notion Help (sidebar), Spotify Support (Your Library, pins), Netflix Help (My List), Figma Help (star files), Microsoft Office Support (QAT, ribbon), Adobe Helpx (toolbar), Apple Support (Control Center), Google Chrome Help (extensions).
+
+> Повний текстовий звіт із порівняннями та галереєю — у [`readme.md`](readme.md). Референс-скріншоти Battle.net надав замовник у брифі.
+</script>
+
+<script>
+// Компактний markdown → HTML рендер (офлайн, без залежностей).
+// Підтримує: заголовки, ---, blockquote, списки, GFM-таблиці, **жирний**,
+// `код`, [текст](url), ![alt](src) → галерея, параграфи.
+(function(){
+  function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+  function inline(s){
+    s = esc(s);
+    s = s.replace(/`([^`]+)`/g,(_,c)=>"<code>"+c+"</code>");
+    s = s.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>");
+    s = s.replace(/\*([^*]+)\*/g,"<em>$1</em>");
+    s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');
+    return s;
+  }
+  function slug(t){return t.toLowerCase().replace(/[^\wа-яіїєґ0-9]+/gi,"-").replace(/^-+|-+$/g,"");}
+  const IMG = /^!\[([^\]]*)\]\(([^)]+)\)\s*$/;
+
+  function render(md){
+    const lines = md.replace(/\r/g,"").split("\n");
+    let html="", i=0;
+    function flushParas(buf){ if(buf.trim()) html += "<p>"+inline(buf.trim())+"</p>"; }
+
+    while(i < lines.length){
+      let line = lines[i];
+
+      if(/^\s*$/.test(line)){ i++; continue; }
+      if(/^---+\s*$/.test(line)){ html+="<hr>"; i++; continue; }
+
+      let h = line.match(/^(#{1,4})\s+(.*)$/);
+      if(h){ const lvl=h[1].length, txt=h[2].trim(); html+="<h"+lvl+' id="'+slug(txt)+'">'+inline(txt)+"</h"+lvl+">"; i++; continue; }
+
+      // галерея зображень (послідовні ![alt](src) рядки)
+      if(IMG.test(line)){
+        let imgs=[];
+        while(i<lines.length && IMG.test(lines[i])){ const m=lines[i].match(IMG); imgs.push({alt:m[1],src:m[2]}); i++; }
+        html += '<div class="gallery">'+imgs.map(im=>
+          '<figure data-cap="'+esc(im.alt)+'"><img loading="lazy" src="'+encodeURI(im.src)+'" alt="'+esc(im.alt)+'"><figcaption>'+inline(im.alt)+'</figcaption></figure>'
+        ).join("")+'</div>';
+        continue;
+      }
+
+      if(/^>\s?/.test(line)){
+        let buf=[];
+        while(i<lines.length && /^>\s?/.test(lines[i])){ buf.push(lines[i].replace(/^>\s?/,"")); i++; }
+        html += "<blockquote>"+ buf.map(b=> b.trim()? "<p>"+inline(b)+"</p>":"").join("") +"</blockquote>";
+        continue;
+      }
+
+      if(/^\s*\|.*\|\s*$/.test(line) && i+1<lines.length && /^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i+1]) && lines[i+1].includes("-")){
+        const parse = r => r.trim().replace(/^\||\|$/g,"").split("|").map(c=>c.trim());
+        const head = parse(lines[i]); i+=2;
+        let rows=[];
+        while(i<lines.length && /^\s*\|.*\|\s*$/.test(lines[i])){ rows.push(parse(lines[i])); i++; }
+        let t='<table><thead><tr>'+head.map(c=>"<th>"+inline(c)+"</th>").join("")+"</tr></thead><tbody>";
+        t += rows.map(r=>"<tr>"+r.map(c=>"<td>"+inline(c)+"</td>").join("")+"</tr>").join("");
+        t += "</tbody></table>";
+        html += t; continue;
+      }
+
+      if(/^\s*\d+\.\s+/.test(line)){
+        let items=[];
+        while(i<lines.length && /^\s*\d+\.\s+/.test(lines[i])){ items.push(lines[i].replace(/^\s*\d+\.\s+/,"")); i++; }
+        html += "<ol>"+items.map(t=>"<li>"+inline(t)+"</li>").join("")+"</ol>";
+        continue;
+      }
+
+      if(/^\s*-\s+/.test(line)){
+        let items=[];
+        while(i<lines.length && /^\s*-\s+/.test(lines[i])){ items.push(lines[i].replace(/^\s*-\s+/,"")); i++; }
+        html += "<ul>"+items.map(t=>"<li>"+inline(t)+"</li>").join("")+"</ul>";
+        continue;
+      }
+
+      let buf=[];
+      while(i<lines.length && !/^\s*$/.test(lines[i]) && !/^(#{1,4}\s|>\s?|---+\s*$|\s*-\s+|\s*\d+\.\s+)/.test(lines[i]) && !/^\s*\|.*\|\s*$/.test(lines[i]) && !IMG.test(lines[i])){
+        buf.push(lines[i]); i++;
+      }
+      flushParas(buf.join(" "));
+    }
+    return html;
+  }
+
+  const src = document.getElementById("source").textContent;
+  document.getElementById("content").innerHTML = render(src);
+
+  // --- лайтбокс ---
+  const lb = document.getElementById("lightbox");
+  const lbImg = lb.querySelector("img");
+  const lbCap = lb.querySelector(".cap");
+  document.getElementById("content").addEventListener("click", e=>{
+    const fig = e.target.closest(".gallery figure");
+    if(!fig) return;
+    lbImg.src = fig.querySelector("img").src;
+    lbCap.textContent = fig.getAttribute("data-cap") || "";
+    lb.classList.add("open");
+  });
+  function close(){ lb.classList.remove("open"); lbImg.src=""; }
+  lb.addEventListener("click", close);
+  document.addEventListener("keydown", e=>{ if(e.key==="Escape") close(); });
+})();
+</script>
+</body>
+</html>
