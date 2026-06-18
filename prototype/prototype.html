@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Прототип game-selector · WGC Research</title>
+<title>Game-selector prototype · WGC Research</title>
 <style>
   :root{
     --bg:#0e1116; --bg-soft:#151a22; --panel:#1a212b; --border:#283140;
     --text:#e7ecf3; --muted:#9aa7b8; --accent:#f5a623; --accent-2:#4aa3ff;
     --good:#43c59e; --shadow:0 8px 30px rgba(0,0,0,.35);
     --maxw:980px; --radius:14px;
-    /* мок-лаунчер завжди темний, незалежно від теми сторінки */
+    /* launcher mock stays dark regardless of page theme */
     --gc-bg:#0b0f15; --gc-bg2:#121822; --gc-tile:#1c2530; --gc-line:rgba(255,255,255,.10);
     --gc-text:#f2f5fa; --gc-dim:rgba(255,255,255,.34); --gc-accent:#e8772e;
   }
@@ -28,7 +28,7 @@
     font-size:17px; line-height:1.6; -webkit-font-smoothing:antialiased; padding-left:264px;
   }
   a{color:var(--accent-2); text-decoration:none}
-  /* --- сайдбар (єдиний з іншими сторінками) --- */
+  /* --- sidebar (shared with other pages) --- */
   .sidebar{position:fixed; top:0; left:0; width:264px; height:100vh; overflow-y:auto;
     background:var(--bg-soft); border-right:1px solid var(--border); padding:20px 14px 40px; z-index:20}
   .side-head{display:flex; align-items:center; gap:10px; padding:4px 8px 16px; border-bottom:1px solid var(--border)}
@@ -44,9 +44,9 @@
   .menu-btn{display:none}
   .wrap{max-width:var(--maxw); margin:0 auto; padding:34px 28px 90px}
   .lead h1{font-size:1.9em; margin:0 0 .2em}
-  .lead p{color:var(--muted); margin:.2em 0 0; max-width:64ch}
+  .lead p{color:var(--muted); margin:.2em 0 0; max-width:66ch}
 
-  /* --- перемикач варіантів --- */
+  /* --- variant switch --- */
   .switch{display:inline-flex; background:var(--bg-soft); border:1px solid var(--border);
     border-radius:12px; padding:5px; gap:4px; margin:26px 0 8px}
   .switch button{appearance:none; border:none; background:transparent; color:var(--muted);
@@ -55,7 +55,7 @@
   .switch button[aria-pressed="true"]{background:var(--accent); color:#0e1116}
   .switch button[aria-pressed="true"] small{color:#0e1116; opacity:.8}
 
-  /* --- мок-вікно лаунчера --- */
+  /* --- launcher mock window --- */
   .gc{background:var(--gc-bg); border:1px solid var(--gc-line); border-radius:16px; overflow:hidden;
     box-shadow:var(--shadow); margin-top:14px; color:var(--gc-text)}
   .gc-titlebar{display:flex; align-items:center; gap:12px; padding:14px 18px;
@@ -65,12 +65,16 @@
     color:#0b0f15; font-weight:900; font-size:13px}
   .gc-win{margin-left:auto; display:flex; gap:16px; color:var(--gc-dim); font-size:13px}
 
-  /* --- стрічка селектора --- */
+  /* --- selector strip --- */
   .selector{display:flex; align-items:center; gap:16px; padding:16px 18px; min-height:86px; flex-wrap:wrap; position:relative}
   .tile{position:relative; width:54px; height:54px; border-radius:12px; display:grid; place-items:center;
     font-weight:800; font-size:17px; cursor:pointer; flex:0 0 auto; user-select:none;
     background:var(--gc-tile); color:var(--gc-text); transition:transform .12s ease, background .15s ease, border-color .15s ease}
   .tile:hover{transform:translateY(-2px)}
+  .tile.draggable{cursor:grab}
+  .tile.draggable:active{cursor:grabbing}
+  .tile.dragging{opacity:.35; transform:none}
+  .tile.drop-target{outline:2px dashed var(--gc-accent); outline-offset:3px}
   .tile .accent{position:absolute; left:50%; transform:translateX(-50%); bottom:-10px; width:26px; height:3px; border-radius:2px; background:var(--gc-accent); opacity:0; transition:opacity .15s}
   .tile.active .accent{opacity:1}
   .tile.ghost{background:transparent; border:1.5px dashed rgba(255,255,255,.20); color:var(--gc-dim); font-weight:700}
@@ -83,7 +87,7 @@
     font-size:11.5px; padding:4px 9px; border-radius:6px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s}
   .tile:hover .tip{opacity:.92}
 
-  /* --- кнопка "Усі ігри" (варіант 4) --- */
+  /* --- "All games" button (variant 4) --- */
   .more{height:54px; padding:0 16px; border-radius:12px; background:rgba(255,255,255,.06); color:var(--gc-text);
     border:1px solid var(--gc-line); font:inherit; font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:8px; cursor:pointer}
   .more:hover{background:rgba(255,255,255,.12)}
@@ -91,7 +95,7 @@
   .more.open .chev{transform:rotate(180deg)}
   .more .count{background:var(--gc-accent); color:#0b0f15; font-size:12px; font-weight:800; padding:1px 8px; border-radius:999px}
 
-  /* --- панель-дровер невстановлених (варіант 4) --- */
+  /* --- not-installed drawer (variant 4) --- */
   .drawer{position:absolute; top:78px; left:18px; right:18px; background:var(--gc-bg2);
     border:1px solid var(--gc-line); border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.55);
     padding:16px; z-index:5; display:none}
@@ -107,7 +111,7 @@
     font:inherit; font-weight:700; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px}
   .gcard .install:hover{filter:brightness(1.08)}
 
-  /* --- hero (контекст play-first) --- */
+  /* --- hero (play-first context) --- */
   .hero{padding:18px; border-top:1px solid var(--gc-line); display:flex; align-items:center; gap:18px}
   .hero .art{width:120px; height:64px; border-radius:10px; flex:0 0 auto; display:grid; place-items:center; color:#fff; font-weight:800}
   .hero .meta{flex:1; min-width:0}
@@ -117,7 +121,7 @@
     color:#0b0f15; font:inherit; font-weight:800; font-size:16px; cursor:pointer}
   .hero .play:hover{filter:brightness(1.07)}
 
-  /* --- анотація під прототипом --- */
+  /* --- annotation below the prototype --- */
   .note{background:var(--bg-soft); border:1px solid var(--border); border-left:4px solid var(--accent);
     border-radius:0 12px 12px 0; padding:14px 18px; margin-top:18px; font-size:15px; color:var(--muted)}
   .note b{color:var(--text)}
@@ -147,26 +151,26 @@
       <div class="side-title">Research<small>Wargaming Game Center</small></div>
     </div>
     <nav>
-      <div class="nav-label">Документи</div>
-      <a class="doc-link" href="../research/research.html">Дослідження<small>Discovery</small></a>
-      <a class="doc-link" href="../gamelist/gamelist.html">Кастомізація списку ігор<small>Gamelist</small></a>
-      <a class="doc-link active" href="prototype.html">Прототип селектора<small>Prototype</small></a>
+      <div class="nav-label">Documents</div>
+      <a class="doc-link" href="../research/research.html">Research<small>Discovery</small></a>
+      <a class="doc-link" href="../gamelist/gamelist.html">Game list customization<small>Gamelist</small></a>
+      <a class="doc-link active" href="prototype.html">Selector prototype<small>Prototype</small></a>
     </nav>
   </aside>
-  <button class="menu-btn" aria-label="Меню">&#9776;</button>
+  <button class="menu-btn" aria-label="Menu">&#9776;</button>
 
   <div class="wrap">
     <div class="lead">
-      <h1>Game-selector: розділення встановлених / невстановлених ігор</h1>
-      <p>Інтерактивний прототип хедера WGC. Перемкніть логіку — інтерфейс перебудується наживо. Перші дві ігри (Tanks, Warships) встановлені.</p>
+      <h1>Game selector: separating installed / not-installed games</h1>
+      <p>Interactive prototype of the WGC header. Switch the logic — the UI rebuilds live. The first two games (Tanks, Warships) are installed. In Variant 1 you can drag tiles to reorder them within their section.</p>
     </div>
 
-    <div class="switch" role="group" aria-label="Вибір варіанта">
-      <button id="btn-1" aria-pressed="true" onclick="setVariant(1)">Варіант 1<small>Групи + роздільник</small></button>
-      <button id="btn-4" aria-pressed="false" onclick="setVariant(4)">Варіант 4<small>Прогресивне розкриття</small></button>
+    <div class="switch" role="group" aria-label="Variant selection">
+      <button id="btn-1" aria-pressed="true" onclick="setVariant(1)">Variant 1<small>Groups + divider</small></button>
+      <button id="btn-4" aria-pressed="false" onclick="setVariant(4)">Variant 4<small>Progressive disclosure</small></button>
     </div>
 
-    <!-- мок-вікно лаунчера -->
+    <!-- launcher mock window -->
     <div class="gc">
       <div class="gc-titlebar">
         <div class="gc-logo"><span class="gc-mark">W</span> GAME CENTER</div>
@@ -174,7 +178,7 @@
       </div>
       <div class="selector" id="selector"></div>
       <div class="drawer" id="drawer">
-        <h4>Усі ігри Wargaming</h4>
+        <h4>All Wargaming games</h4>
         <div class="cards" id="cards"></div>
       </div>
       <div class="hero" id="hero"></div>
@@ -183,9 +187,9 @@
     <div class="note" id="note"></div>
 
     <div class="legend">
-      <span><i class="sw" style="background:var(--gc-tile); border:1px solid var(--gc-line)"></i> встановлена · готова грати</span>
-      <span><i class="sw" style="background:transparent; border:1.5px dashed rgba(120,140,170,.6)"></i> не встановлена · доступна</span>
-      <span><i class="sw" style="background:var(--accent)"></i> активна / акцент</span>
+      <span><i class="sw" style="background:var(--gc-tile); border:1px solid var(--gc-line)"></i> installed · ready to play</span>
+      <span><i class="sw" style="background:transparent; border:1.5px dashed rgba(120,140,170,.6)"></i> not installed · available</span>
+      <span><i class="sw" style="background:var(--accent)"></i> active / accent</span>
     </div>
   </div>
 
@@ -193,34 +197,40 @@
 
 <script>
 const GAMES = [
-  {id:'wot',  mono:'WoT', name:'World of Tanks',          desc:'Танкові бої 15×15.',        color:'#caa14a', installed:true},
-  {id:'wows', mono:'WoWs',name:'World of Warships',       desc:'Морські баталії.',          color:'#3a7bd5', installed:true},
-  {id:'blitz',mono:'WoTB',name:'World of Tanks Blitz',    desc:'Швидкі бої, крос-плей.',    color:'#d8702e', installed:false},
-  {id:'wowp', mono:'WoWp',name:'World of Warplanes',      desc:'Бойова авіація.',           color:'#5aa0a0', installed:false},
-  {id:'leg',  mono:'WoWL',name:'World of Warships: Legends',desc:'Консольні морські бої.',  color:'#7c6fce', installed:false},
-  {id:'steel',mono:'SH',  name:'Steel Hunters',           desc:'PvPvE мехи. Новинка.',      color:'#4aa3ff', installed:false},
+  {id:'wot',  mono:'WoT', name:'World of Tanks',           desc:'15×15 tank battles.',     color:'#caa14a', installed:true},
+  {id:'wows', mono:'WoWs',name:'World of Warships',        desc:'Naval warfare.',          color:'#3a7bd5', installed:true},
+  {id:'blitz',mono:'WoTB',name:'World of Tanks Blitz',     desc:'Fast cross-play battles.',color:'#d8702e', installed:false},
+  {id:'wowp', mono:'WoWp',name:'World of Warplanes',       desc:'Combat aviation.',        color:'#5aa0a0', installed:false},
+  {id:'leg',  mono:'WoWL',name:'World of Warships: Legends',desc:'Console naval battles.', color:'#7c6fce', installed:false},
+  {id:'steel',mono:'SH',  name:'Steel Hunters',            desc:'PvPvE mechs. New.',       color:'#4aa3ff', installed:false},
 ];
 let variant = 1;
 let activeId = 'wot';
+let dragId = null;
 
 const $ = s => document.querySelector(s);
 const selector = $('#selector'), drawer = $('#drawer'), cards = $('#cards'),
       hero = $('#hero'), note = $('#note');
 
 function tile(g){
-  const isActive = g.id === activeId && g.installed;
+  const drag = variant === 1;
+  const dnd = drag
+    ? `draggable="true" ondragstart="onDragStart(event,'${g.id}')" ondragend="onDragEnd(event)"
+       ondragover="onDragOver(event,'${g.id}')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${g.id}')"`
+    : '';
   if(g.installed){
-    return `<div class="tile ${isActive?'active':''}" style="background:${hex2bg(g.color)}"
-              onclick="selectGame('${g.id}')">
+    const isActive = g.id === activeId;
+    return `<div class="tile ${drag?'draggable':''} ${isActive?'active':''}" data-id="${g.id}"
+              style="background:${hex2bg(g.color)}" ${dnd} onclick="selectGame('${g.id}')">
               <span style="color:${g.color}">${g.mono.slice(0,2)}</span>
               <span class="accent"></span>
               <span class="tip">${g.name}</span>
             </div>`;
   }
-  return `<div class="tile ghost" onclick="installGame('${g.id}')">
+  return `<div class="tile ghost ${drag?'draggable':''}" data-id="${g.id}" ${dnd} onclick="installGame('${g.id}')">
             ${g.mono.slice(0,2)}
             <span class="dl">&#8595;</span>
-            <span class="tip">${g.name} · встановити</span>
+            <span class="tip">${g.name} · install</span>
           </div>`;
 }
 function hex2bg(c){ return 'color-mix(in srgb,'+c+' 22%, #1c2530)'; }
@@ -231,17 +241,17 @@ function renderSelector(){
 
   if(variant === 1){
     selector.innerHTML =
-      `<span class="cap">Встановлені</span>` +
+      `<span class="cap">Installed</span>` +
       installed.map(tile).join('') +
       `<span class="divider"></span>` +
-      `<span class="cap">Усі ігри</span>` +
+      `<span class="cap">All games</span>` +
       notInstalled.map(tile).join('');
     drawer.classList.remove('open');
   } else {
     selector.innerHTML =
       installed.map(tile).join('') +
       `<button class="more" id="moreBtn" onclick="toggleDrawer()">
-         <span class="count">${notInstalled.length}</span> Усі ігри
+         <span class="count">${notInstalled.length}</span> All games
          <span class="chev">&#9662;</span>
        </button>`;
     renderCards(notInstalled);
@@ -255,38 +265,39 @@ function renderCards(list){
       <div class="body">
         <div class="name">${g.name}</div>
         <div class="desc">${g.desc}</div>
-        <button class="install" onclick="installGame('${g.id}')">&#8595; Встановити</button>
+        <button class="install" onclick="installGame('${g.id}')">&#8595; Install</button>
       </div>
     </div>`).join('');
 }
 
 function renderHero(){
-  const g = GAMES.find(x=>x.id===activeId) || GAMES[0];
+  const g = GAMES.find(x=>x.id===activeId) || GAMES.find(x=>x.installed);
   hero.innerHTML = `
     <div class="art" style="background:color-mix(in srgb,${g.color} 45%, #11151c)">${g.mono.slice(0,2)}</div>
     <div class="meta">
       <div class="gname">${g.name}</div>
-      <div class="gstate">&#9679; Встановлена · готова до запуску · EU3</div>
+      <div class="gstate">&#9679; Installed · ready to play · EU3</div>
     </div>
-    <button class="play" onclick="toast('▶ Запуск: ${g.name}')">Грати</button>`;
+    <button class="play" onclick="toast('▶ Launching: ${g.name}')">Play</button>`;
 }
 
 function renderNote(){
   if(variant === 1){
-    note.innerHTML = `<b>Варіант 1 — Групи + роздільник.</b> Встановлені зліва з підписом секції,
-      далі вертикальна лінія, праворуч — решта портфоліо у стані «ghost» (пунктир + бейдж завантаження).
+    note.innerHTML = `<b>Variant 1 — Groups + divider.</b> Installed games on the left with a section label,
+      then a vertical divider, and the rest of the portfolio on the right in a "ghost" state (dashed + download badge).
+      <b>Drag any tile to reorder it within its own section.</b>
       <ul>
-        <li><b>Сильне:</b> поділ читається миттєво, нуль навчання — топ для аудиторії 35+.</li>
-        <li><b>Сильне:</b> усе портфоліо на видноті → cross-promo працює без кліку.</li>
-        <li><b>Слабке:</b> погано масштабується — 12+ ігор не влізуть у хедер.</li>
+        <li><b>Strength:</b> the split reads instantly, zero learning — best for the 35+ audience.</li>
+        <li><b>Strength:</b> the whole portfolio stays visible → cross-promo works without a click.</li>
+        <li><b>Weakness:</b> scales poorly — 12+ games won't fit in the header.</li>
       </ul>`;
   } else {
-    note.innerHTML = `<b>Варіант 4 — Прогресивне розкриття.</b> У стрічці лише встановлені ігри + кнопка
-      «Усі ігри · N». Клік відкриває дровер із картками всього портфоліо й кнопками встановлення.
+    note.innerHTML = `<b>Variant 4 — Progressive disclosure.</b> Only installed games sit in the strip, plus an
+      "All games · N" button. A click opens a drawer with cards for the whole portfolio and install buttons.
       <ul>
-        <li><b>Сильне:</b> найкраще масштабується — від 1 гри до всього портфоліо WG, хедер завжди чистий.</li>
-        <li><b>Сильне:</b> чистий play-first: видно тільки те, у що граєш.</li>
-        <li><b>Слабке:</b> cross-promo «за кліком» → дровер треба робити багатим (новинки, банери).</li>
+        <li><b>Strength:</b> scales best — from 1 game to the entire WG portfolio, the header stays clean.</li>
+        <li><b>Strength:</b> pure play-first: you only see what you actually play.</li>
+        <li><b>Weakness:</b> cross-promo is "behind a click" → the drawer must be rich (new releases, banners).</li>
       </ul>`;
   }
 }
@@ -306,8 +317,46 @@ function toggleDrawer(){
 }
 function installGame(id){
   const g = GAMES.find(x=>x.id===id);
-  toast('Встановлення: ' + g.name + ' …');
+  toast('Installing: ' + g.name + ' …');
 }
+
+/* --- drag & drop reorder (within a section) --- */
+function onDragStart(e, id){
+  dragId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  e.currentTarget.classList.add('dragging');
+}
+function onDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.tile.drop-target').forEach(t=>t.classList.remove('drop-target'));
+  dragId = null;
+}
+function sameSection(aId, bId){
+  const a = GAMES.find(g=>g.id===aId), b = GAMES.find(g=>g.id===bId);
+  return a && b && a.installed === b.installed;
+}
+function onDragOver(e, targetId){
+  if(!dragId || dragId === targetId || !sameSection(dragId, targetId)) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  e.currentTarget.classList.add('drop-target');
+}
+function onDragLeave(e){ e.currentTarget.classList.remove('drop-target'); }
+function onDrop(e, targetId){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drop-target');
+  if(!dragId || dragId === targetId || !sameSection(dragId, targetId)){ dragId = null; return; }
+  const a = GAMES.find(g=>g.id===dragId);
+  const oFrom = GAMES.indexOf(a);
+  const oTo = GAMES.findIndex(g=>g.id===targetId);
+  GAMES.splice(oFrom, 1);
+  let insertAt = GAMES.findIndex(g=>g.id===targetId);
+  if(oFrom < oTo) insertAt += 1;          // dragged rightward → drop after target
+  GAMES.splice(insertAt, 0, a);
+  dragId = null;
+  render();
+}
+
 let tT;
 function toast(msg){
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
