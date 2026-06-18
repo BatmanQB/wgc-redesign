@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Прототип game-selector · WGC Research</title>
+<style>
+  :root{
+    --bg:#0e1116; --bg-soft:#151a22; --panel:#1a212b; --border:#283140;
+    --text:#e7ecf3; --muted:#9aa7b8; --accent:#f5a623; --accent-2:#4aa3ff;
+    --good:#43c59e; --shadow:0 8px 30px rgba(0,0,0,.35);
+    --maxw:980px; --radius:14px;
+    /* мок-лаунчер завжди темний, незалежно від теми сторінки */
+    --gc-bg:#0b0f15; --gc-bg2:#121822; --gc-tile:#1c2530; --gc-line:rgba(255,255,255,.10);
+    --gc-text:#f2f5fa; --gc-dim:rgba(255,255,255,.34); --gc-accent:#e8772e;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#f4f6fa; --bg-soft:#ffffff; --panel:#ffffff; --border:#e2e7ef;
+      --text:#1b2330; --muted:#5d6b7e; --accent:#d98a00; --accent-2:#1f6fdb;
+      --good:#1f9b78; --shadow:0 8px 28px rgba(20,30,50,.08);
+    }
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    font-size:17px; line-height:1.6; -webkit-font-smoothing:antialiased; padding-left:264px;
+  }
+  a{color:var(--accent-2); text-decoration:none}
+  /* --- сайдбар (єдиний з іншими сторінками) --- */
+  .sidebar{position:fixed; top:0; left:0; width:264px; height:100vh; overflow-y:auto;
+    background:var(--bg-soft); border-right:1px solid var(--border); padding:20px 14px 40px; z-index:20}
+  .side-head{display:flex; align-items:center; gap:10px; padding:4px 8px 16px; border-bottom:1px solid var(--border)}
+  .side-title{font-weight:700; font-size:15px; line-height:1.2}
+  .side-title small{display:block; font-size:11px; color:var(--muted); font-weight:600}
+  .badge{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--bg);
+    background:var(--accent); padding:5px 11px; border-radius:999px; font-weight:700}
+  .nav-label{font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin:18px 8px 8px; font-weight:700}
+  .doc-link{display:block; padding:9px 11px; border-radius:9px; color:var(--text); font-size:14.5px; font-weight:600; line-height:1.3}
+  .doc-link small{display:block; font-size:10.5px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.07em; margin-top:2px}
+  .doc-link:hover{background:color-mix(in srgb,var(--accent) 10%, transparent)}
+  .doc-link.active{background:color-mix(in srgb,var(--accent-2) 15%, transparent); color:var(--accent-2)}
+  .menu-btn{display:none}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:34px 28px 90px}
+  .lead h1{font-size:1.9em; margin:0 0 .2em}
+  .lead p{color:var(--muted); margin:.2em 0 0; max-width:64ch}
+
+  /* --- перемикач варіантів --- */
+  .switch{display:inline-flex; background:var(--bg-soft); border:1px solid var(--border);
+    border-radius:12px; padding:5px; gap:4px; margin:26px 0 8px}
+  .switch button{appearance:none; border:none; background:transparent; color:var(--muted);
+    font:inherit; font-size:14.5px; font-weight:600; padding:9px 16px; border-radius:8px; cursor:pointer; text-align:left}
+  .switch button small{display:block; font-size:11px; font-weight:600; opacity:.75; text-transform:uppercase; letter-spacing:.05em}
+  .switch button[aria-pressed="true"]{background:var(--accent); color:#0e1116}
+  .switch button[aria-pressed="true"] small{color:#0e1116; opacity:.8}
+
+  /* --- мок-вікно лаунчера --- */
+  .gc{background:var(--gc-bg); border:1px solid var(--gc-line); border-radius:16px; overflow:hidden;
+    box-shadow:var(--shadow); margin-top:14px; color:var(--gc-text)}
+  .gc-titlebar{display:flex; align-items:center; gap:12px; padding:14px 18px;
+    background:linear-gradient(180deg, var(--gc-bg2), var(--gc-bg)); border-bottom:1px solid var(--gc-line)}
+  .gc-logo{display:flex; align-items:center; gap:9px; font-weight:800; letter-spacing:.04em; font-size:14px}
+  .gc-mark{width:24px; height:24px; border-radius:6px; background:var(--gc-accent); display:grid; place-items:center;
+    color:#0b0f15; font-weight:900; font-size:13px}
+  .gc-win{margin-left:auto; display:flex; gap:16px; color:var(--gc-dim); font-size:13px}
+
+  /* --- стрічка селектора --- */
+  .selector{display:flex; align-items:center; gap:16px; padding:16px 18px; min-height:86px; flex-wrap:wrap; position:relative}
+  .tile{position:relative; width:54px; height:54px; border-radius:12px; display:grid; place-items:center;
+    font-weight:800; font-size:17px; cursor:pointer; flex:0 0 auto; user-select:none;
+    background:var(--gc-tile); color:var(--gc-text); transition:transform .12s ease, background .15s ease, border-color .15s ease}
+  .tile:hover{transform:translateY(-2px)}
+  .tile .accent{position:absolute; left:50%; transform:translateX(-50%); bottom:-10px; width:26px; height:3px; border-radius:2px; background:var(--gc-accent); opacity:0; transition:opacity .15s}
+  .tile.active .accent{opacity:1}
+  .tile.ghost{background:transparent; border:1.5px dashed rgba(255,255,255,.20); color:var(--gc-dim); font-weight:700}
+  .tile.ghost:hover{border-color:rgba(255,255,255,.4); color:rgba(255,255,255,.7)}
+  .tile .dl{position:absolute; top:-6px; right:-6px; width:19px; height:19px; border-radius:50%;
+    background:var(--gc-bg); border:1px solid rgba(255,255,255,.28); display:grid; place-items:center; color:rgba(255,255,255,.7); font-size:11px}
+  .cap{font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--gc-dim); align-self:center; white-space:nowrap}
+  .divider{width:1px; align-self:stretch; margin:8px 0; background:var(--gc-line)}
+  .tip{position:absolute; bottom:-30px; left:50%; transform:translateX(-50%); background:#000; color:#fff;
+    font-size:11.5px; padding:4px 9px; border-radius:6px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .12s}
+  .tile:hover .tip{opacity:.92}
+
+  /* --- кнопка "Усі ігри" (варіант 4) --- */
+  .more{height:54px; padding:0 16px; border-radius:12px; background:rgba(255,255,255,.06); color:var(--gc-text);
+    border:1px solid var(--gc-line); font:inherit; font-size:14px; font-weight:600; display:inline-flex; align-items:center; gap:8px; cursor:pointer}
+  .more:hover{background:rgba(255,255,255,.12)}
+  .more .chev{transition:transform .18s}
+  .more.open .chev{transform:rotate(180deg)}
+  .more .count{background:var(--gc-accent); color:#0b0f15; font-size:12px; font-weight:800; padding:1px 8px; border-radius:999px}
+
+  /* --- панель-дровер невстановлених (варіант 4) --- */
+  .drawer{position:absolute; top:78px; left:18px; right:18px; background:var(--gc-bg2);
+    border:1px solid var(--gc-line); border-radius:14px; box-shadow:0 18px 50px rgba(0,0,0,.55);
+    padding:16px; z-index:5; display:none}
+  .drawer.open{display:block}
+  .drawer h4{margin:2px 4px 12px; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--gc-dim); font-weight:700}
+  .cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:12px}
+  .gcard{background:var(--gc-tile); border:1px solid var(--gc-line); border-radius:12px; overflow:hidden}
+  .gcard .cover{height:80px; display:grid; place-items:center; font-weight:800; font-size:22px; color:#fff}
+  .gcard .body{padding:10px 12px 12px}
+  .gcard .name{font-size:14px; font-weight:700}
+  .gcard .desc{font-size:12px; color:var(--gc-dim); margin:3px 0 10px; line-height:1.45}
+  .gcard .install{width:100%; padding:8px; border:none; border-radius:8px; background:var(--gc-accent); color:#0b0f15;
+    font:inherit; font-weight:700; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px}
+  .gcard .install:hover{filter:brightness(1.08)}
+
+  /* --- hero (контекст play-first) --- */
+  .hero{padding:18px; border-top:1px solid var(--gc-line); display:flex; align-items:center; gap:18px}
+  .hero .art{width:120px; height:64px; border-radius:10px; flex:0 0 auto; display:grid; place-items:center; color:#fff; font-weight:800}
+  .hero .meta{flex:1; min-width:0}
+  .hero .gname{font-size:18px; font-weight:800}
+  .hero .gstate{font-size:13px; color:var(--good); margin-top:2px}
+  .hero .play{margin-left:auto; padding:13px 36px; border:none; border-radius:10px; background:var(--gc-accent);
+    color:#0b0f15; font:inherit; font-weight:800; font-size:16px; cursor:pointer}
+  .hero .play:hover{filter:brightness(1.07)}
+
+  /* --- анотація під прототипом --- */
+  .note{background:var(--bg-soft); border:1px solid var(--border); border-left:4px solid var(--accent);
+    border-radius:0 12px 12px 0; padding:14px 18px; margin-top:18px; font-size:15px; color:var(--muted)}
+  .note b{color:var(--text)}
+  .note ul{margin:.5em 0 0; padding-left:1.2em}
+  .note li{margin:.25em 0}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:10px; font-size:13px; color:var(--muted)}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .sw{width:16px; height:16px; border-radius:5px; flex:0 0 auto}
+
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:#000; color:#fff;
+    padding:11px 18px; border-radius:10px; font-size:14px; opacity:0; transition:all .2s; z-index:50; pointer-events:none}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:900px){
+    body{padding-left:0}
+    .sidebar{transform:translateX(-100%); transition:transform .22s ease; box-shadow:var(--shadow)}
+    body.nav-open .sidebar{transform:none}
+    .menu-btn{display:inline-flex; position:fixed; top:14px; left:14px; z-index:30; width:40px; height:36px;
+      align-items:center; justify-content:center; background:var(--bg-soft); border:1px solid var(--border); border-radius:9px; color:var(--text); font-size:18px; cursor:pointer}
+  }
+</style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="side-head">
+      <span class="badge">WGC</span>
+      <div class="side-title">Research<small>Wargaming Game Center</small></div>
+    </div>
+    <nav>
+      <div class="nav-label">Документи</div>
+      <a class="doc-link" href="../research/research.html">Дослідження<small>Discovery</small></a>
+      <a class="doc-link" href="../gamelist/gamelist.html">Кастомізація списку ігор<small>Gamelist</small></a>
+      <a class="doc-link active" href="prototype.html">Прототип селектора<small>Prototype</small></a>
+    </nav>
+  </aside>
+  <button class="menu-btn" aria-label="Меню">&#9776;</button>
+
+  <div class="wrap">
+    <div class="lead">
+      <h1>Game-selector: розділення встановлених / невстановлених ігор</h1>
+      <p>Інтерактивний прототип хедера WGC. Перемкніть логіку — інтерфейс перебудується наживо. Перші дві ігри (Tanks, Warships) встановлені.</p>
+    </div>
+
+    <div class="switch" role="group" aria-label="Вибір варіанта">
+      <button id="btn-1" aria-pressed="true" onclick="setVariant(1)">Варіант 1<small>Групи + роздільник</small></button>
+      <button id="btn-4" aria-pressed="false" onclick="setVariant(4)">Варіант 4<small>Прогресивне розкриття</small></button>
+    </div>
+
+    <!-- мок-вікно лаунчера -->
+    <div class="gc">
+      <div class="gc-titlebar">
+        <div class="gc-logo"><span class="gc-mark">W</span> GAME CENTER</div>
+        <div class="gc-win">&#9472; &#9633; &#10005;</div>
+      </div>
+      <div class="selector" id="selector"></div>
+      <div class="drawer" id="drawer">
+        <h4>Усі ігри Wargaming</h4>
+        <div class="cards" id="cards"></div>
+      </div>
+      <div class="hero" id="hero"></div>
+    </div>
+
+    <div class="note" id="note"></div>
+
+    <div class="legend">
+      <span><i class="sw" style="background:var(--gc-tile); border:1px solid var(--gc-line)"></i> встановлена · готова грати</span>
+      <span><i class="sw" style="background:transparent; border:1.5px dashed rgba(120,140,170,.6)"></i> не встановлена · доступна</span>
+      <span><i class="sw" style="background:var(--accent)"></i> активна / акцент</span>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const GAMES = [
+  {id:'wot',  mono:'WoT', name:'World of Tanks',          desc:'Танкові бої 15×15.',        color:'#caa14a', installed:true},
+  {id:'wows', mono:'WoWs',name:'World of Warships',       desc:'Морські баталії.',          color:'#3a7bd5', installed:true},
+  {id:'blitz',mono:'WoTB',name:'World of Tanks Blitz',    desc:'Швидкі бої, крос-плей.',    color:'#d8702e', installed:false},
+  {id:'wowp', mono:'WoWp',name:'World of Warplanes',      desc:'Бойова авіація.',           color:'#5aa0a0', installed:false},
+  {id:'leg',  mono:'WoWL',name:'World of Warships: Legends',desc:'Консольні морські бої.',  color:'#7c6fce', installed:false},
+  {id:'steel',mono:'SH',  name:'Steel Hunters',           desc:'PvPvE мехи. Новинка.',      color:'#4aa3ff', installed:false},
+];
+let variant = 1;
+let activeId = 'wot';
+
+const $ = s => document.querySelector(s);
+const selector = $('#selector'), drawer = $('#drawer'), cards = $('#cards'),
+      hero = $('#hero'), note = $('#note');
+
+function tile(g){
+  const isActive = g.id === activeId && g.installed;
+  if(g.installed){
+    return `<div class="tile ${isActive?'active':''}" style="background:${hex2bg(g.color)}"
+              onclick="selectGame('${g.id}')">
+              <span style="color:${g.color}">${g.mono.slice(0,2)}</span>
+              <span class="accent"></span>
+              <span class="tip">${g.name}</span>
+            </div>`;
+  }
+  return `<div class="tile ghost" onclick="installGame('${g.id}')">
+            ${g.mono.slice(0,2)}
+            <span class="dl">&#8595;</span>
+            <span class="tip">${g.name} · встановити</span>
+          </div>`;
+}
+function hex2bg(c){ return 'color-mix(in srgb,'+c+' 22%, #1c2530)'; }
+
+function renderSelector(){
+  const installed = GAMES.filter(g=>g.installed);
+  const notInstalled = GAMES.filter(g=>!g.installed);
+
+  if(variant === 1){
+    selector.innerHTML =
+      `<span class="cap">Встановлені</span>` +
+      installed.map(tile).join('') +
+      `<span class="divider"></span>` +
+      `<span class="cap">Усі ігри</span>` +
+      notInstalled.map(tile).join('');
+    drawer.classList.remove('open');
+  } else {
+    selector.innerHTML =
+      installed.map(tile).join('') +
+      `<button class="more" id="moreBtn" onclick="toggleDrawer()">
+         <span class="count">${notInstalled.length}</span> Усі ігри
+         <span class="chev">&#9662;</span>
+       </button>`;
+    renderCards(notInstalled);
+  }
+}
+
+function renderCards(list){
+  cards.innerHTML = list.map(g=>`
+    <div class="gcard">
+      <div class="cover" style="background:color-mix(in srgb,${g.color} 38%, #11151c)">${g.mono.slice(0,2)}</div>
+      <div class="body">
+        <div class="name">${g.name}</div>
+        <div class="desc">${g.desc}</div>
+        <button class="install" onclick="installGame('${g.id}')">&#8595; Встановити</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderHero(){
+  const g = GAMES.find(x=>x.id===activeId) || GAMES[0];
+  hero.innerHTML = `
+    <div class="art" style="background:color-mix(in srgb,${g.color} 45%, #11151c)">${g.mono.slice(0,2)}</div>
+    <div class="meta">
+      <div class="gname">${g.name}</div>
+      <div class="gstate">&#9679; Встановлена · готова до запуску · EU3</div>
+    </div>
+    <button class="play" onclick="toast('▶ Запуск: ${g.name}')">Грати</button>`;
+}
+
+function renderNote(){
+  if(variant === 1){
+    note.innerHTML = `<b>Варіант 1 — Групи + роздільник.</b> Встановлені зліва з підписом секції,
+      далі вертикальна лінія, праворуч — решта портфоліо у стані «ghost» (пунктир + бейдж завантаження).
+      <ul>
+        <li><b>Сильне:</b> поділ читається миттєво, нуль навчання — топ для аудиторії 35+.</li>
+        <li><b>Сильне:</b> усе портфоліо на видноті → cross-promo працює без кліку.</li>
+        <li><b>Слабке:</b> погано масштабується — 12+ ігор не влізуть у хедер.</li>
+      </ul>`;
+  } else {
+    note.innerHTML = `<b>Варіант 4 — Прогресивне розкриття.</b> У стрічці лише встановлені ігри + кнопка
+      «Усі ігри · N». Клік відкриває дровер із картками всього портфоліо й кнопками встановлення.
+      <ul>
+        <li><b>Сильне:</b> найкраще масштабується — від 1 гри до всього портфоліо WG, хедер завжди чистий.</li>
+        <li><b>Сильне:</b> чистий play-first: видно тільки те, у що граєш.</li>
+        <li><b>Слабке:</b> cross-promo «за кліком» → дровер треба робити багатим (новинки, банери).</li>
+      </ul>`;
+  }
+}
+
+function render(){ renderSelector(); renderHero(); renderNote(); }
+
+function setVariant(v){
+  variant = v;
+  $('#btn-1').setAttribute('aria-pressed', v===1);
+  $('#btn-4').setAttribute('aria-pressed', v===4);
+  render();
+}
+function selectGame(id){ activeId = id; render(); }
+function toggleDrawer(){
+  drawer.classList.toggle('open');
+  const b = $('#moreBtn'); if(b) b.classList.toggle('open');
+}
+function installGame(id){
+  const g = GAMES.find(x=>x.id===id);
+  toast('Встановлення: ' + g.name + ' …');
+}
+let tT;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(tT); tT = setTimeout(()=>t.classList.remove('show'), 1900);
+}
+
+document.querySelector('.menu-btn').addEventListener('click',()=>document.body.classList.toggle('nav-open'));
+document.addEventListener('click', e=>{
+  if(variant===4 && drawer.classList.contains('open') &&
+     !e.target.closest('#drawer') && !e.target.closest('#moreBtn')){
+    drawer.classList.remove('open');
+    const b=$('#moreBtn'); if(b) b.classList.remove('open');
+  }
+});
+
+render();
+</script>
+</body>
+</html>
