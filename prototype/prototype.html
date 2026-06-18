@@ -363,8 +363,7 @@ function setVariant(v){
 function selectGame(id){ activeId = id; render(); }
 function toggleEmpty(on){
   emptyState = on;
-  if(on && variant !== 4) setVariant(4);   // empty state is most relevant for variant 4
-  else render();
+  render();   // stay on the current variant
 }
 function openDrawer(){
   drawer.classList.add('open');
