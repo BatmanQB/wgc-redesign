@@ -262,10 +262,11 @@ function renderSelector(){
   const notInstalled = notInstalledGames();
 
   if(variant === 1){
+    const installedSection = installed.length
+      ? `<span class="cap">Installed</span>` + installed.map(tile).join('') + `<span class="divider"></span>`
+      : '';
     selector.innerHTML =
-      `<span class="cap">Installed</span>` +
-      (installed.length ? installed.map(tile).join('') : `<span class="empty-hint">none yet</span>`) +
-      `<span class="divider"></span>` +
+      installedSection +
       `<span class="cap">All games</span>` +
       notInstalled.map(tile).join('');
     drawer.classList.remove('open');
