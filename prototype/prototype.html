@@ -131,6 +131,23 @@
   .legend span{display:inline-flex; align-items:center; gap:7px}
   .sw{width:16px; height:16px; border-radius:5px; flex:0 0 auto}
 
+  /* --- first-launch simulation toggle --- */
+  .sim{display:inline-flex; align-items:center; gap:8px; margin-left:14px; font-size:13.5px;
+    color:var(--muted); cursor:pointer; user-select:none; vertical-align:middle}
+  .sim input{accent-color:var(--accent); width:16px; height:16px; cursor:pointer}
+
+  /* --- empty selector + onboarding hero (no installed games) --- */
+  .empty-hint{display:inline-flex; align-items:center; gap:8px; font-size:14px; color:var(--gc-dim)}
+  .onboard{padding:24px 18px; border-top:1px solid var(--gc-line); display:flex; align-items:center; gap:18px}
+  .onboard .ic{width:56px; height:56px; border-radius:14px; background:var(--gc-accent); color:#0b0f15;
+    display:grid; place-items:center; font-weight:900; font-size:24px; flex:0 0 auto}
+  .onboard .meta{flex:1; min-width:0}
+  .onboard .t{font-size:18px; font-weight:800}
+  .onboard .s{font-size:14px; color:var(--gc-dim); margin-top:3px; max-width:52ch; line-height:1.5}
+  .onboard .cta{margin-left:auto; padding:13px 28px; border:none; border-radius:10px; background:var(--gc-accent);
+    color:#0b0f15; font:inherit; font-weight:800; font-size:15px; cursor:pointer; white-space:nowrap}
+  .onboard .cta:hover{filter:brightness(1.07)}
+
   .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:#000; color:#fff;
     padding:11px 18px; border-radius:10px; font-size:14px; opacity:0; transition:all .2s; z-index:50; pointer-events:none}
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
@@ -169,6 +186,7 @@
       <button id="btn-1" aria-pressed="true" onclick="setVariant(1)">Variant 1<small>Groups + divider</small></button>
       <button id="btn-4" aria-pressed="false" onclick="setVariant(4)">Variant 4<small>Progressive disclosure</small></button>
     </div>
+    <label class="sim"><input type="checkbox" id="empty" onchange="toggleEmpty(this.checked)"> First launch — no games installed</label>
 
     <!-- launcher mock window -->
     <div class="gc">
@@ -207,6 +225,10 @@ const GAMES = [
 let variant = 1;
 let activeId = 'wot';
 let dragId = null;
+let emptyState = false;
+
+function installedGames(){ return emptyState ? [] : GAMES.filter(g=>g.installed); }
+function notInstalledGames(){ return emptyState ? GAMES.slice() : GAMES.filter(g=>!g.installed); }
 
 const $ = s => document.querySelector(s);
 const selector = $('#selector'), drawer = $('#drawer'), cards = $('#cards'),
@@ -218,7 +240,7 @@ function tile(g){
     ? `draggable="true" ondragstart="onDragStart(event,'${g.id}')" ondragend="onDragEnd(event)"
        ondragover="onDragOver(event,'${g.id}')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'${g.id}')"`
     : '';
-  if(g.installed){
+  if(g.installed && !emptyState){
     const isActive = g.id === activeId;
     return `<div class="tile ${drag?'draggable':''} ${isActive?'active':''}" data-id="${g.id}"
               style="background:${hex2bg(g.color)}" ${dnd} onclick="selectGame('${g.id}')">
@@ -236,22 +258,25 @@ function tile(g){
 function hex2bg(c){ return 'color-mix(in srgb,'+c+' 22%, #1c2530)'; }
 
 function renderSelector(){
-  const installed = GAMES.filter(g=>g.installed);
-  const notInstalled = GAMES.filter(g=>!g.installed);
+  const installed = installedGames();
+  const notInstalled = notInstalledGames();
 
   if(variant === 1){
     selector.innerHTML =
       `<span class="cap">Installed</span>` +
-      installed.map(tile).join('') +
+      (installed.length ? installed.map(tile).join('') : `<span class="empty-hint">none yet</span>`) +
       `<span class="divider"></span>` +
       `<span class="cap">All games</span>` +
       notInstalled.map(tile).join('');
     drawer.classList.remove('open');
   } else {
+    const lead = installed.length
+      ? installed.map(tile).join('')
+      : `<span class="empty-hint">&#9888; No games installed yet</span>`;
     selector.innerHTML =
-      installed.map(tile).join('') +
+      lead +
       `<button class="more" id="moreBtn" onclick="toggleDrawer()">
-         <span class="count">${notInstalled.length}</span> All games
+         <span class="count">${notInstalled.length}</span> ${installed.length ? 'All games' : 'Browse all games'}
          <span class="chev">&#9662;</span>
        </button>`;
     renderCards(notInstalled);
@@ -271,7 +296,20 @@ function renderCards(list){
 }
 
 function renderHero(){
-  const g = GAMES.find(x=>x.id===activeId) || GAMES.find(x=>x.installed);
+  const installed = installedGames();
+  if(installed.length === 0){
+    hero.className = 'onboard';
+    hero.innerHTML = `
+      <div class="ic">W</div>
+      <div class="meta">
+        <div class="t">Welcome to Game Center</div>
+        <div class="s">You don't have any games installed yet. Pick one from the Wargaming universe to download and start playing.</div>
+      </div>
+      <button class="cta" onclick="openDrawer()">Browse games</button>`;
+    return;
+  }
+  hero.className = 'hero';
+  const g = installed.find(x=>x.id===activeId) || installed[0];
   hero.innerHTML = `
     <div class="art" style="background:color-mix(in srgb,${g.color} 45%, #11151c)">${g.mono.slice(0,2)}</div>
     <div class="meta">
@@ -282,6 +320,17 @@ function renderHero(){
 }
 
 function renderNote(){
+  if(emptyState){
+    note.innerHTML = `<b>First launch — no games installed.</b> The selector strip has no game tiles yet;
+      it collapses to a single "Browse all games" entry, and the hero turns into an onboarding panel instead of Play.
+      This is the new-player path from the brief (secondary audience: onboarding, discovering the universe).
+      <ul>
+        <li>No dead "Play" button with nothing to launch — the primary CTA becomes "Browse games".</li>
+        <li>The whole portfolio is one click away in the drawer, each game with an Install button.</li>
+        <li>Variant 4 handles this most gracefully — the clean header has nothing to hide.</li>
+      </ul>`;
+    return;
+  }
   if(variant === 1){
     note.innerHTML = `<b>Variant 1 — Groups + divider.</b> Installed games on the left with a section label,
       then a vertical divider, and the rest of the portfolio on the right in a "ghost" state (dashed + download badge).
@@ -311,6 +360,15 @@ function setVariant(v){
   render();
 }
 function selectGame(id){ activeId = id; render(); }
+function toggleEmpty(on){
+  emptyState = on;
+  if(on && variant !== 4) setVariant(4);   // empty state is most relevant for variant 4
+  else render();
+}
+function openDrawer(){
+  drawer.classList.add('open');
+  const b = $('#moreBtn'); if(b) b.classList.add('open');
+}
 function toggleDrawer(){
   drawer.classList.toggle('open');
   const b = $('#moreBtn'); if(b) b.classList.toggle('open');
